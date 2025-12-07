@@ -1,4 +1,4 @@
-<h1>Meedi</h1>
+<h1>Media Controller</h1>
 A remote control app built for Android.
 The app displays a minimal, Apple-inspired interface reminiscent of Apple Carplay, and allows you to see and control the currently playing media on your Windows computer all from your phone.
 While originally designed for Spotify, this works for any media playing on your computer which is recognised by Windows, including music, videos, movies, etc.
