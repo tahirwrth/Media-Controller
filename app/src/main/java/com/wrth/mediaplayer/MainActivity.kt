@@ -33,13 +33,11 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import kotlin.math.abs
 
-// Retrofit API service for media controls
 interface MediaControlService {
     @POST("media")
     fun controlMedia(@Body action: Map<String, String>): Call<ResponseBody>
 }
 
-// Retrofit API service for getting the current track cover image
 interface MediaService {
     @GET("currentTrack")
     fun getCurrentTrack(): Call<TrackResponse>
@@ -52,7 +50,7 @@ interface SeekService {
 data class TrackResponse(val playing: Boolean?, val songName: String?, val artistName: String?, val coverImg: String?, val currentPos: Int?, val duration: Int?)
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var baseURL: String // Adjust IP as necessary
+    private lateinit var baseURL: String
     private lateinit var coverImageView: ImageView
     private lateinit var backgroundImageView: ImageView
     private lateinit var songNameTextView: TextView
@@ -93,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         )
         setContentView(R.layout.activity_main)
         coverImageView = findViewById(R.id.coverImageView)
-        coverImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)  // Prevent hardware blur
+        coverImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         backgroundImageView = findViewById(R.id.backgroundImageView)
         songNameTextView = findViewById(R.id.songName)
         artistNameTextView = findViewById(R.id.artistName)
@@ -132,8 +130,8 @@ class MainActivity : AppCompatActivity() {
 
         saveButton.setOnClickListener {
             val text = editText.text.toString()
-            sharedPreferences.edit().putString("hidden_text", text).apply() // Save text persistently
-            hiddenMenu.visibility = View.GONE // Hide the menu after saving
+            sharedPreferences.edit().putString("hidden_text", text).apply()
+            hiddenMenu.visibility = View.GONE
         }
 
         hiddenMenu.setOnClickListener {
@@ -147,7 +145,6 @@ class MainActivity : AppCompatActivity() {
         gestureDetector = GestureDetector(this, GestureListener())
 
 
-        // Start periodic cover image updates
         handler.post(updateDataTask)
     }
 
@@ -155,10 +152,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         if (hiddenMenu.visibility == View.GONE) {
-            hiddenMenu.visibility = View.VISIBLE // Show the hidden menu
+            hiddenMenu.visibility = View.VISIBLE
         } else {
             if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                super.onBackPressed() // Exit if pressed twice within 2 seconds
+                super.onBackPressed()
             } else {
                 Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show()
             }
@@ -170,7 +167,6 @@ class MainActivity : AppCompatActivity() {
         return sharedPreferences.getString("hidden_text", "") ?: ""
     }
 
-    // Periodically update the album cover every second
     private val updateDataTask = object : Runnable {
         override fun run() {
             loadCurrentTrack()
@@ -178,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Send media control commands
+
     private fun sendCommand(action: String) {
         val command = mapOf("action" to action)
         mediaControlService.controlMedia(command).enqueue(object : Callback<ResponseBody> {
@@ -196,7 +192,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // Load and display the album cover from the server
     private fun loadCurrentTrack() {
         val call = mediaService.getCurrentTrack()
         call.enqueue(object : Callback<TrackResponse> {
@@ -219,15 +214,15 @@ class MainActivity : AppCompatActivity() {
                     try {
                         val decodedString = Base64.decode(coverIMG, Base64.DEFAULT)
                         val bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
-                        coverImageView.setImageDrawable(null)  // Ensure it resets
-                        coverImageView.setImageBitmap(bitmap)  // Set original unblurred image
+                        coverImageView.setImageDrawable(null)
+                        coverImageView.setImageBitmap(bitmap)
 
-                        // Apply blurred album art as background
+
                         val blurredBitmap = blurBitmap(bitmap)
                         backgroundImageView.setImageBitmap(blurredBitmap)
 
                     } catch (e: Exception) {
-                        e.printStackTrace() // Log the error
+                        e.printStackTrace()
                     }
                 }
                 if (currentPosition != null && duration != null) {
@@ -242,11 +237,11 @@ class MainActivity : AppCompatActivity() {
                 {
                     if(playing == true)
                     {
-                        playPauseButton.setImageResource(R.drawable.ic_pause)  // Replace with your pause icon
+                        playPauseButton.setImageResource(R.drawable.ic_pause) 
                     }
                     else
                     {
-                        playPauseButton.setImageResource(R.drawable.ic_play)   // Replace with your play icon
+                        playPauseButton.setImageResource(R.drawable.ic_play) 
                     }
 
                 }
@@ -254,7 +249,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onFailure(call: Call<TrackResponse>, t: Throwable) {
                 Glide.with(this@MainActivity)
-                    .load(R.drawable.placeholder_image)  // Load placeholder on error
+                    .load(R.drawable.placeholder_image)
                     .into(coverImageView)
             }
         })
@@ -267,16 +262,14 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // Optional: Handle touch start event
                 sendCommand("play_pause")
 
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                // Optional: Handle touch stop event
 
-                val positionMs = lastProgress * 1000 // Convert to milliseconds
-                seekTrack(positionMs) // Seek to the position
+                val positionMs = lastProgress * 1000
+                seekTrack(positionMs)
 
                 sendCommand("play_pause")
             }
@@ -331,20 +324,19 @@ class MainActivity : AppCompatActivity() {
     private fun blurBitmap(bitmap: Bitmap): Bitmap {
         val renderScript = RenderScript.create(this)
 
-        // Create a mutable copy of the bitmap
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
 
         val input = Allocation.createFromBitmap(renderScript, outputBitmap)
         val output = Allocation.createTyped(renderScript, input.type)
         val script = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
 
-        script.setRadius(25f) // Blur intensity (max is 25)
+        script.setRadius(25f) // Blur intensity 
         script.setInput(input)
         script.forEach(output)
-        output.copyTo(outputBitmap)  // Copy to a separate bitmap
+        output.copyTo(outputBitmap) 
 
         renderScript.destroy()
-        return outputBitmap // Return the new blurred bitmap
+        return outputBitmap
     }
 
     private fun animateButton(view: View) {
